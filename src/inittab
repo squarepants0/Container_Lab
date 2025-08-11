@@ -1,0 +1,11 @@
+::sysinit:/bin/busybox mount -t proc proc /proc
+::sysinit:/bin/busybox mount -t sysfs sysfs /sys
+::sysinit:/bin/busybox mount -t tmpfs tmpfs /tmp
+::sysinit:/bin/busybox mount -t devtmpfs devtmpfs /dev
+::sysinit:/bin/busybox ifconfig eth0 up
+::sysinit:/etc/init.d/rcS
+::sysinit:/bin/busybox udhcpc -i eth0
+# ::respawn:-/bin/sh /dev/ttyS0
+ttyS0::respawn:/bin/sh
+::ctrlaltdel:/sbin/reboot
+::shutdown:/bin/busybox umount -a -r

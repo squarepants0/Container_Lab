@@ -1,0 +1,61 @@
+# 使用 Ubuntu 16.04 作为基础镜像（原生支持 GCC 5.x）
+FROM ubuntu:16.04
+
+# 安装编译工具链
+RUN apt-get update && \
+    apt-get install -y \
+    build-essential \
+    gcc-5 g++-5 \
+    libncurses-dev \
+    bc \
+    flex \
+    bison \
+    libssl-dev \
+    wget \
+    git 
+
+
+# 创建工作目录
+WORKDIR /workspace
+
+# 下载内核源码并解压
+RUN wget https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-4.7.10.tar.xz && \
+    tar xvf linux-4.7.10.tar.xz
+# 配置内核（启用 User Namespace + Cgroups）
+RUN cd linux-4.7.10 && make defconfig && \
+# Namespaces (for container isolation)
+    echo "CONFIG_NAMESPACES=y" >> .config && \
+    echo "CONFIG_UTS_NS=y" >> .config && \
+    echo "CONFIG_IPC_NS=y" >> .config && \
+    echo "CONFIG_USER_NS=y" >> .config && \
+    echo "CONFIG_PID_NS=y" >> .config && \
+    echo "CONFIG_NET_NS=y" >> .config && \
+# Control Groups (cgroups, for resource limiting)
+    echo "CONFIG_CGROUPS=y" >> .config && \
+## cpuset
+    echo "CONFIG_CPUSETS=y" >> .config && \
+## cpu
+    echo "CONFIG_CGROUP_SCHED=y" >> .config && \
+    echo "CONFIG_FAIR_GROUP_SCHED=y" >> .config && \
+## cpuacct
+    echo "CONFIG_CGROUP_CPUACCT=y" >> .config && \
+## blkio
+    echo "CONFIG_BLK_CGROUP=y" >> .config && \
+    echo "CONFIG_IOSCHED_CFQ=y" >> .config && \
+    echo "CONFIG_CFQ_GROUP_IOSCHED=y" >> .config && \
+## memory
+    echo "CONFIG_MEMCG=y" >> .config && \
+    echo "CONFIG_MEMCG_SWAP=y" >> .config && \
+## devices
+    echo "CONFIG_CGROUP_DEVICE=y" >> .config && \
+## freezer
+    echo "CONFIG_CGROUP_FREEZER=y" >> .config && \
+## perf_event
+    echo "CONFIG_CGROUP_PERF=y" >> .config && \
+## pids
+    echo "CONFIG_CGROUP_PIDS=y" >> .config && \
+    make olddefconfig
+    
+
+RUN cd linux-4.7.10 && make -j$(nproc) 
+CMD /bin/bash

@@ -1,0 +1,14 @@
+#!/bin/sh
+
+
+mkdir -p /sys/fs/cgroup
+mount -t tmpfs none /sys/fs/cgroup
+echo "running $0 for cgroups initialization"
+cat /proc/cgroups | grep -v '^#' | while read controller hierarchy num enabled; do
+    if [ "$enabled" -eq 1 ]; then
+        echo "Mounting cgroup controller: $controller"
+        dir="/sys/fs/cgroup/$controller"
+        mkdir -p "$dir"
+        mount -t cgroup -o "$controller" none "$dir"
+    fi
+done
